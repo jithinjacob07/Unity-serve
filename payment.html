@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donation Payment - UnityServe</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* General Styles */
+        :root {
+            --primary-color: #f05f40; /* Orange from UnityServe */
+            --primary-dark: #dd4b2b;
+            --primary-light: #ff7d61;
+            --secondary-color: #212529; /* Dark gray/black from UnityServe */
+            --accent-color: #6c757d; /* Gray from UnityServe */
+            --text-light: #6c757d;
+            --text-dark: #212529;
+            --bg-light: #f8f9fa;
+            --success-color: #5dd3b8; /* Mint green from submit button */
+            --success-dark: #4bc0a5;
+            --white: #ffffff;
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Merriweather', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+        }
+        
+        /* Preloader */
+        #preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--bg-light);
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Main Container */
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            max-width: 800px;
+            width: 90%;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            opacity: 0;
+            transition: var(--transition);
+        }
+        
+        .main-container.loaded {
+            opacity: 1;
+        }
+        
+        /* Header Section */
+        .header-section {
+            width: 100%;
+            height: 200px;
+            background-image: url('/api/placeholder/1600/400');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(240, 95, 64, 0.9), rgba(33, 37, 41, 0.9));
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: white;
+            text-align: center;
+        }
+        
+        .overlay-icon {
+            font-size: 3rem;
+            color: white;
+            margin-bottom: 1rem;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .overlay h1 {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+        
+        /* Form Section */
+        .form-section {
+            width: 100%;
+            padding: 2rem;
+            position: relative;
+        }
+        
+        .form-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .form-header p {
+            color: var(--text-light);
+            line-height: 1.6;
+            font-weight: 300;
+        }
+        
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.8rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.8rem;
+            color: var(--text-dark);
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        
+        .input-group {
+            position: relative;
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 15px 12px 45px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-family: 'Merriweather', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: var(--transition);
+            background-color: white;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(240, 95, 64, 0.2);
+        }
+        
+        input:focus + .input-icon {
+            color: var(--primary-color);
+        }
+        
+        /* Amount Selection */
+        .amount-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 1rem;
+        }
+        
+        .amount-option {
+            flex: 1 0 calc(25% - 10px);
+            background-color: var(--bg-light);
+            border: 2px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 600;
+        }
+        
+        .amount-option:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-3px);
+        }
+        
+        .amount-option.selected {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        #custom-amount-container {
+            display: none;
+            margin-top: 1rem;
+        }
+        
+        #custom-amount-container.active {
+            display: block;
+        }
+        
+        /* Payment Method */
+        .payment-methods {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .payment-method {
+            flex: 1;
+            border: 2px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .payment-method:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-3px);
+        }
+        
+        .payment-method.selected {
+            border-color: var(--primary-color);
+            background-color: rgba(240, 95, 64, 0.05);
+        }
+        
+        .payment-method img {
+            height: 40px;
+            object-fit: contain;
+            margin-bottom: 10px;
+        }
+        
+        .payment-method-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        /* Submit Button */
+        .payment-btn {
+            display: block;
+            width: 100%;
+            background-color: var(--success-color);
+            color: var(--secondary-color);
+            border: none;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .payment-btn:hover {
+            background-color: var(--success-dark);
+            transform: translateY(-3px);
+        }
+        
+        /* Success Message */
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .success-icon {
+            font-size: 4rem;
+            color: var(--success-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .success-title {
+            font-size: 1.8rem;
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .success-text {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+        
+        /* Information Cards */
+        .info-cards {
+            display: flex;
+            gap: 15px;
+            margin-top: 2.5rem;
+        }
+        
+        .info-card {
+            flex: 1;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+            background-color: var(--bg-light);
+            transition: var(--transition);
+        }
+        
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .info-icon {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            transition: var(--transition);
+        }
+        
+        .info-card:hover .info-icon {
+            transform: scale(1.1);
+        }
+        
+        .info-card h3 {
+            color: var(--secondary-color);
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+        
+        .info-card p {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 0;
+            line-height: 1.6;
+            font-weight: 300;
+        }
+        
+        /* Tax Benefits Note */
+        .tax-benefits {
+            background-color: rgba(240, 95, 64, 0.1);
+            border-left: 4px solid var(--primary-color);
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .tax-benefits h3 {
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            font-size: 1rem;
+        }
+        
+        .tax-benefits p {
+            color: var(--text-dark);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 900px) {
+            .main-container {
+                width: 95%;
+            }
+            
+            .form-section {
+                padding: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .amount-option {
+                flex: 1 0 calc(33.333% - 10px);
+            }
+            
+            .payment-methods {
+                flex-direction: column;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .amount-option {
+                flex: 1 0 calc(50% - 10px);
+            }
+            
+            .info-cards {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Preloader -->
+    <div id="preloader">
+        <div class="loader"></div>
+    </div>
+    
+    <div class="main-container">
+        <!-- Header Section -->
+        <div class="header-section">
+            <div class="overlay">
+                <i class="fas fa-hand-holding-heart overlay-icon"></i>
+                <h1>Make a Donation</h1>
+            </div>
+        </div>
+        
+        <!-- Form Section -->
+        <div class="form-section">
+            <div class="form-header">
+                <p>Your contribution helps us continue our mission of providing essential services to communities in need. Thank you for your generosity!</p>
+            </div>
+            
+            <form id="donation-form">
+                <!-- Donation Amount -->
+                <div class="form-group">
+                    <label>Select Donation Amount:</label>
+                    <div class="amount-options">
+                        <div class="amount-option" data-amount="100">₹100</div>
+                        <div class="amount-option" data-amount="500">₹500</div>
+                        <div class="amount-option" data-amount="1000">₹1,000</div>
+                        <div class="amount-option" data-amount="5000">₹5,000</div>
+                        <div class="amount-option" data-amount="10000">₹10,000</div>
+                        <div class="amount-option" data-amount="custom">Custom</div>
+                    </div>
+                    
+                    <div id="custom-amount-container">
+                        <div class="input-group">
+                            <input type="number" id="custom-amount" name="custom-amount" min="1" placeholder="Enter amount">
+                            <i class="fas fa-rupee-sign input-icon"></i>
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" id="donation-amount" name="donation-amount" value="">
+                </div>
+                
+                <!-- Donor Information -->
+                <div class="form-group">
+                    <label for="donor-name">Your Name:</label>
+                    <div class="input-group">
+                        <input type="text" id="donor-name" name="donor-name" required>
+                        <i class="fas fa-user input-icon"></i>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="donor-email">Your Email:</label>
+                    <div class="input-group">
+                        <input type="email" id="donor-email" name="donor-email" required>
+                        <i class="fas fa-envelope input-icon"></i>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="donor-phone">Your Phone Number:</label>
+                    <div class="input-group">
+                        <input type="tel" id="donor-phone" name="donor-phone" required>
+                        <i class="fas fa-phone input-icon"></i>
+                    </div>
+                </div>
+                
+                <!-- Payment Methods -->
+                <div class="form-group">
+                    <label>Payment Method:</label>
+                    <div class="payment-methods">
+                        <div class="payment-method selected" data-method="card">
+                            <img src="/api/placeholder/160/60" alt="Credit/Debit Card">
+                            <div class="payment-method-name">Credit/Debit Card</div>
+                        </div>
+                        
+                        <div class="payment-method" data-method="upi">
+                            <img src="/api/placeholder/160/60" alt="UPI">
+                            <div class="payment-method-name">UPI</div>
+                        </div>
+                        
+                        <div class="payment-method" data-method="netbanking">
+                            <img src="/api/placeholder/160/60" alt="Net Banking">
+                            <div class="payment-method-name">Net Banking</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tax Benefits Note -->
+                <div class="tax-benefits">
+                    <h3>Tax Benefits Available</h3>
+                    <p>All donations are eligible for tax exemption under Section 80G. You will receive a donation receipt via email after your donation is processed.</p>
+                </div>
+                
+                <!-- Payment Button -->
+                <button type="button" id="rzp-button" class="payment-btn">Proceed to Payment</button>
+            </form>
+            
+            <!-- Success Message -->
+            <div class="success-message" id="success-message">
+                <i class="fas fa-check-circle success-icon"></i>
+                <h2 class="success-title">Thank You!</h2>
+                <p class="success-text">Your donation has been received successfully. A confirmation email has been sent to your registered email address.</p>
+                <button type="button" class="payment-btn" id="make-another-donation">Make Another Donation</button>
+            </div>
+            
+            <!-- Information Cards -->
+            <div class="info-cards">
+                <div class="info-card">
+                    <i class="fas fa-shield-alt info-icon"></i>
+                    <h3>Secure Payment</h3>
+                    <p>Your payment information is protected</p>
+                </div>
+                
+                <div class="info-card">
+                    <i class="fas fa-receipt info-icon"></i>
+                    <h3>Tax Receipt</h3>
+                    <p>Emailed instantly after donation</p>
+                </div>
+                
+                <div class="info-card">
+                    <i class="fas fa-heart info-icon"></i>
+                    <h3>100% Impact</h3>
+                    <p>All funds go directly to our programs</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Razorpay Script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    
+    <!-- Main Script -->
+    <script>
+        // Preloader
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                document.getElementById('preloader').style.display = 'none';
+                document.querySelector('.main-container').classList.add('loaded');
+            }, 800);
+        });
+        
+        // DOM Content Loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Amount Selection
+            const amountOptions = document.querySelectorAll('.amount-option');
+            const customAmountContainer = document.getElementById('custom-amount-container');
+            const customAmountInput = document.getElementById('custom-amount');
+            const donationAmountInput = document.getElementById('donation-amount');
+            
+            amountOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    // Remove selected from all options
+                    amountOptions.forEach(opt => opt.classList.remove('selected'));
+                    
+                    // Add selected to clicked option
+                    this.classList.add('selected');
+                    
+                    const amount = this.getAttribute('data-amount');
+                    
+                    // Show/Hide custom amount input
+                    if (amount === 'custom') {
+                        customAmountContainer.classList.add('active');
+                        customAmountInput.focus();
+                        donationAmountInput.value = '';
+                    } else {
+                        customAmountContainer.classList.remove('active');
+                        donationAmountInput.value = amount;
+                    }
+                });
+            });
+            
+            // Update hidden amount field when custom amount changes
+            customAmountInput.addEventListener('input', function() {
+                donationAmountInput.value = this.value;
+            });
+            
+            // Set default amount
+            document.querySelector('.amount-option[data-amount="500"]').click();
+            
+            // Payment Method Selection
+            const paymentMethods = document.querySelectorAll('.payment-method');
+            
+            paymentMethods.forEach(method => {
+                method.addEventListener('click', function() {
+                    // Remove selected from all methods
+                    paymentMethods.forEach(m => m.classList.remove('selected'));
+                    
+                    // Add selected to clicked method
+                    this.classList.add('selected');
+                });
+            });
+            
+            // Razorpay Integration
+            document.getElementById('rzp-button').addEventListener('click', function(e) {
+                // Validate form
+                const donorName = document.getElementById('donor-name').value;
+                const donorEmail = document.getElementById('donor-email').value;
+                const donorPhone = document.getElementById('donor-phone').value;
+                const donationAmount = donationAmountInput.value;
+                
+                if (!donorName || !donorEmail || !donorPhone) {
+                    alert('Please fill in all required fields');
+                    return;
+                }
+                
+                if (!donationAmount || donationAmount <= 0) {
+                    alert('Please select or enter a valid donation amount');
+                    return;
+                }
+                
+                // Show loading on button
+                const paymentBtn = document.getElementById('rzp-button');
+                const originalText = paymentBtn.innerText;
+                paymentBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                paymentBtn.disabled = true;
+                
+                // In a real implementation, you would make an API call to your server here
+                // to create a Razorpay order and get an order ID
+                // For this demo, we'll simulate that
+                setTimeout(function() {
+                    // Razorpay options
+                    const options = {
+                        key: "rzp_test_YourTestKey", // Replace with your actual Razorpay key
+                        amount: donationAmount * 100, // Razorpay takes amount in paise
+                        currency: "INR",
+                        name: "UnityServe",
+                        description: "Donation",
+                        image: "/api/placeholder/150/150", // Replace with your logo
+                        handler: function(response) {
+                            // This function is called when payment is successful
+                            document.getElementById('donation-form').style.display = 'none';
+                            document.getElementById('success-message').style.display = 'block';
+                            
+                            // In a real implementation, you would verify the payment on your server
+                            console.log("Payment ID: " + response.razorpay_payment_id);
+                        },
+                        prefill: {
+                            name: donorName,
+                            email: donorEmail,
+                            contact: donorPhone
+                        },
+                        theme: {
+                            color: "#f05f40" // Match your primary color
+                        },
+                        modal: {
+                            ondismiss: function() {
+                                // Reset button when modal is closed
+                                paymentBtn.innerHTML = originalText;
+                                paymentBtn.disabled = false;
+                            }
+                        }
+                    };
+                    
+                    // Create Razorpay instance
+                    const rzp = new Razorpay(options);
+                    rzp.open();
+                    
+                }, 1000);
+            });
+            
+            // Make Another Donation
+            document.getElementById('make-another-donation').addEventListener('click', function() {
+                document.getElementById('donation-form').reset();
+                document.getElementById('success-message').style.display = 'none';
+                document.getElementById('donation-form').style.display = 'block';
+                
+                // Reset amount selection
+                document.querySelector('.amount-option[data-amount="500"]').click();
+                
+                // Reset payment method
+                paymentMethods.forEach(m => m.classList.remove('selected'));
+                document.querySelector('.payment-method[data-method="card"]').classList.add('selected');
+            });
+        });
+    </script>
+</body>
+</html>
